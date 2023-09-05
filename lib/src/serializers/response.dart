@@ -12,6 +12,8 @@ enum Method {
   put,
   @JsonValue("PATCH")
   patch,
+  @JsonValue("DELETE")
+  delete,
   @JsonValue("SUBSCRIPTION")
   subscription,
 }
@@ -51,5 +53,6 @@ class Response {
     required this.data,
   });
 
-  factory Response.fromJson(Map<String, dynamic> json) => _$ResponseFromJson(json);
+  factory Response.fromJson(Map<String, dynamic> json) =>
+      _$ResponseFromJson(json);
 }

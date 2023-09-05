@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
 
 import 'package:socket_io_client/socket_io_client.dart' show Socket, io;
 import 'package:uuid/uuid.dart' show Uuid;
@@ -12,6 +14,7 @@ class Request {
     Method.post: {},
     Method.put: {},
     Method.patch: {},
+    Method.delete: {},
     Method.subscription: {},
   };
 
@@ -58,7 +61,7 @@ class Request {
       listener: [onError, onSuccess],
     );
 
-    /// Register listener for namespace if not exist
+    // Register listener for namespace if not exist
     if (!socket.hasListeners(namespace)) {
       socket.on(namespace, (data) {
         final response = Response.fromJson(data);
@@ -66,13 +69,15 @@ class Request {
         if (listeners.containsKey(response.method) &&
             (listeners[response.method] as Map)
                 .containsKey(response.requestId)) {
-          [onError, onSuccess] =
-              (listeners[response.method] as Map)[response.requestId];
+            [onError, onSuccess] =
+            (listeners[response.method] as Map)[response.requestId];
 
-          // emit response to listener
-          (((response.status / 100).round() == 2)
-              ? onSuccess
-              : onError)(response);
+            // emit response to listener
+            (((response.status / 100).round() == 2)
+                ? onSuccess
+                : onError)(response);
+        } else {
+
         }
       });
     }
@@ -89,6 +94,7 @@ class Request {
   // Convert _sendRequest to future using completer
   /// Send request to a server then listen to a future response
   Future<Response> request({
+    String? requestId,
     Map<String, dynamic>? data,
     Map<String, dynamic>? query,
     required String namespace,
@@ -98,6 +104,7 @@ class Request {
     Completer<Response> completer = Completer();
 
     _sendRequest(
+      id: requestId,
       namespace: namespace,
       action: action,
       method: method,
@@ -114,30 +121,47 @@ class Request {
   /// Subscribe to database update with a listener
   /// [onSuccess] dispatch when success response is received
   /// [onError] dispatch when error response is received
-  Future<Response> subscribe({
+  Future<Function({String action})> subscribe({
     required String namespace,
     String action = "subscribe",
+    Method method = Method.post,
     Map<String, dynamic>? data,
     Map<String, dynamic>? query,
     required Function(Response) onError,
     required Function(Response) onSuccess,
   }) {
-    const method = Method.subscription;
-
     return request(
       namespace: namespace,
       action: action,
-      method: Method.post,
+      method: method,
       data: data,
       query: query,
-    ).then((response) {
+    ).then((final response) {
       _addListener(
-        method: method,
+        method: Method.subscription,
         requestId: response.requestId,
         listener: [onError, onSuccess],
       );
 
-      return response;
+      /// Todo Allow send custom payload when unsubscribing
+      /// Works fine for my project, If you need to fork or send pull request
+      return ({final String action = "unsubscribe"}) async {
+        return request(
+          data: data,
+          query: query,
+          action: action,
+          method: Method.delete,
+          namespace: namespace,
+          requestId: response.requestId,
+        ).then((unsubscribeResponse) {
+          removeListener(
+            method: Method.subscription,
+            requestId: response.requestId,
+          );
+
+          return unsubscribeResponse;
+        });
+      };
     });
   }
 }

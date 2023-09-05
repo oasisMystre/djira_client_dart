@@ -25,6 +25,7 @@ const _$MethodEnumMap = {
   Method.post: 'POST',
   Method.put: 'PUT',
   Method.patch: 'PATCH',
+  Method.delete: 'DELETE',
   Method.subscription: 'SUBSCRIPTION',
 };
 
