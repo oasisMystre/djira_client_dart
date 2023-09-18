@@ -64,11 +64,13 @@ class Request {
     // Register listener for namespace if not exist
     if (!socket.hasListeners(namespace)) {
       socket.on(namespace, (data) {
-        final response = Response.fromJson(data);
-        // Check if response has registered listeners
-        if (listeners.containsKey(response.method) &&
-            (listeners[response.method] as Map)
-                .containsKey(response.requestId)) {
+        log("Liistener on", error: data);
+        try {
+          final response = Response.fromJson(data);
+          // Check if response has registered listeners
+          if (listeners.containsKey(response.method) &&
+              (listeners[response.method] as Map)
+                  .containsKey(response.requestId)) {
             [onError, onSuccess] =
             (listeners[response.method] as Map)[response.requestId];
 
@@ -76,9 +78,10 @@ class Request {
             (((response.status / 100).round() == 2)
                 ? onSuccess
                 : onError)(response);
-        } else {
-
-        }
+          } else {
+log("No fucking reciever");
+          }
+        } catch(e, s){ log("Error lol", error: e, stackTrace: s);}
       });
     }
 
