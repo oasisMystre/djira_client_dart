@@ -1,6 +1,6 @@
 name: djira_client
 description: Dart client for djira
-version: 1.0.7
+version: 1.0.9
 repository: https://github.com/oasisMystre/djira_client_dart
 
 environment:
